@@ -1,14 +1,72 @@
-# Welcome to your CDK TypeScript project
+# CloudFormation deployment pipeline sample
 
-This is a blank project for CDK development with TypeScript.
+This project is a sample that deploying CloudFormation template using CodePipeline. Summary of pipeline is following:
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+1. Push a CloudFormation template to CodeCommit repository.
+2. The pipeline create a CloudFormation Change Set.
+3. The pipeline require Manual Approval.
+4. Finally, the pipeline execute the CloudFormation Change Set.
 
-## Useful commands
+## How to trial
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `cdk deploy`      deploy this stack to your default AWS account/region
-* `cdk diff`        compare deployed stack with current state
-* `cdk synth`       emits the synthesized CloudFormation template
+### 1. Clone this repository
+
+```sh
+git clone https://github.com/msysh/aws-cdk-sample-codepipeline-deploy-cfn
+```
+
+### 2. Change directory
+
+```sh
+cd aws-cdk-sample-codepipeline-deploy-cfn
+```
+
+### 3. Deploy AWS resources by CDK
+
+```sh
+cdk deploy
+```
+
+At complete deployment, you can get CodeCommit repository URL from Output.
+
+### 4. Clone CodeCommit repository for CFn template
+
+```sh
+cd (any directory)
+git clone <CodeCommmit Repository URL you got at Step.3>
+```
+
+### 5. Create CFn template
+
+For example, if you want to deploy simple S3 bucket, a template is following:
+
+```yaml
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  S3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
+Outputs:
+  S3BucketName:
+    Value: !Ref S3Bucket
+```
+
+### 6. Push to CodeCommit repository
+
+```sh
+cd (cloned CodeCommit repository)
+git add template.yaml
+git commit -m "first commit"
+git push origin main
+```
+
+You must specify CloudFormation template file name is `template.yml`. The name is hardcoded in cdk at [here](./lib/codepipeline-deploy-cfn-stack.ts#L89)
+
+### 7. Approve Change Set
+
+After Change Set is created, then the pipeline wait for approval. If you approve the Change Set, AWS resoureces in the template will be deployed!
